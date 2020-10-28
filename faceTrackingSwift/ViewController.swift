@@ -48,6 +48,8 @@ class ViewController: NSViewController, AVCaptureVideoDataOutputSampleBufferDele
     }
     
     func cropImage(object: VNDetectedObjectObservation, inputImage: NSImage) -> CGImage? {
+        // !!! Потрібно змінити щоб обрізало не тільки лице а й волосся і плечі.
+        // Також спробувати кружечком
         let width = object.boundingBox.width * CGFloat(inputImage.size.width)
         let height = object.boundingBox.height * CGFloat(inputImage.size.height)
         let x = object.boundingBox.origin.x * CGFloat(inputImage.size.width)
@@ -73,7 +75,7 @@ class ViewController: NSViewController, AVCaptureVideoDataOutputSampleBufferDele
         var capturedImage = NSImage(size: imageRep.size)
         capturedImage.addRepresentation(imageRep)
         CVPixelBufferUnlockBaseAddress(buffer, CVPixelBufferLockFlags.readOnly)
-            
+        
         let request = VNDetectFaceRectanglesRequest { (req, err)
             in
             if err != nil {
@@ -103,10 +105,21 @@ class ViewController: NSViewController, AVCaptureVideoDataOutputSampleBufferDele
         // Show the result.
         DispatchQueue.main.async(execute: {
             self.imageView.image = capturedImage
+            self.imageView.wantsLayer = true
+//            self.imageView.layer!.contentsGravity = CALayerContentsGravity.resizeAspectFill
+            self.imageView.layer!.cornerRadius = self.imageView.layer!.bounds.size.width / 2
+            self.imageView.layer!.masksToBounds = true
+            
         })
     }
 
 }
 
-// https://www.youtube.com/watch?v=d0U5j89M6aI&ab_channel=LetsBuildThatApp
 // https://github.com/rudrajikadra/Face-Detection-Using-Vision-Framework-iOS-Application/blob/master/Face%20Detection/ViewController.swift
+// https://gist.github.com/jeanetienne/76ee42335f80c09d6dafc58169c669fe
+// https://stackoverflow.com/questions/43519752/cut-rounded-image-with-the-face-from-cidetector-and-cifacefeature
+//
+//
+//
+//
+//
