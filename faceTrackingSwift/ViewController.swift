@@ -48,10 +48,11 @@ class ViewController: NSViewController, AVCaptureVideoDataOutputSampleBufferDele
     }
     
     func cropImage(object: VNDetectedObjectObservation, inputImage: NSImage) -> CGImage? {
-        let width = object.boundingBox.width * CGFloat(self.imageView.frame.width)
-        let height = object.boundingBox.height * CGFloat(self.imageView.frame.height)
-        let x = object.boundingBox.origin.x * CGFloat(self.imageView.frame.width)
-        let y = (1 - object.boundingBox.origin.y) * CGFloat(self.imageView.frame.height) - height
+        let width = object.boundingBox.width * CGFloat(inputImage.size.width)
+        let height = object.boundingBox.height * CGFloat(inputImage.size.height)
+        let x = object.boundingBox.origin.x * CGFloat(inputImage.size.width)
+        let y = (1 - object.boundingBox.origin.y) * CGFloat(inputImage.size.height) - height
+        
         let croppingRect = CGRect(x: x, y: y, width: width, height: height)
         guard let image = inputImage.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             return nil
