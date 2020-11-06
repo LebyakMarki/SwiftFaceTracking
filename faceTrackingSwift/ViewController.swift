@@ -8,6 +8,7 @@
 import Cocoa
 import AVFoundation
 import Vision
+import AppKit
 
 class ViewController: NSViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
     @IBOutlet weak var imageView: NSImageView!
@@ -47,14 +48,13 @@ class ViewController: NSViewController, AVCaptureVideoDataOutputSampleBufferDele
         self.session.startRunning()
     }
     
+    
     func cropImage(object: VNDetectedObjectObservation, inputImage: NSImage) -> CGImage? {
-        // !!! Потрібно змінити щоб обрізало не тільки лице а й волосся і плечі.
-        // Також спробувати кружечком
         let width = object.boundingBox.width * CGFloat(inputImage.size.width)
         let height = object.boundingBox.height * CGFloat(inputImage.size.height)
         let x = object.boundingBox.origin.x * CGFloat(inputImage.size.width)
         let y = (1 - object.boundingBox.origin.y) * CGFloat(inputImage.size.height) - height
-        
+
         let croppingRect = CGRect(x: x, y: y, width: width, height: height)
         guard let image = inputImage.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             return nil
@@ -83,7 +83,9 @@ class ViewController: NSViewController, AVCaptureVideoDataOutputSampleBufferDele
                 return
             }
             req.results?.forEach({(res) in
-                guard let faceObserve = res as? VNFaceObservation else { return }
+                guard let faceObserve = res as? VNFaceObservation else {
+                    return
+                }
                 let nsImage = capturedImage
                 let faceImage = self.cropImage(object: faceObserve, inputImage: nsImage)
                 let image = NSImage(cgImage: faceImage!, size: NSZeroSize)
@@ -99,27 +101,31 @@ class ViewController: NSViewController, AVCaptureVideoDataOutputSampleBufferDele
         } catch let reqErr{
             print("Failed to perform request:", reqErr)
         }
-       
-//        let resultImage = capturedImage
 
         // Show the result.
         DispatchQueue.main.async(execute: {
-            self.imageView.image = capturedImage
             self.imageView.wantsLayer = true
-//            self.imageView.layer!.contentsGravity = CALayerContentsGravity.resizeAspectFill
-            self.imageView.layer!.cornerRadius = self.imageView.layer!.bounds.size.width / 2
-            self.imageView.layer!.masksToBounds = true
+            self.imageView.layer?.masksToBounds = true
+            self.imageView.layer?.borderWidth = 0;
+            self.imageView.image = capturedImage.oval()
             
         })
     }
+}
 
+extension NSImage {
+    func oval() -> NSImage {
+        let image = NSImage(size: size)
+        image.lockFocus()
+        NSGraphicsContext.current?.imageInterpolation = .high
+        let frame = NSRect(origin: .zero, size: size)
+        NSBezierPath(ovalIn: frame).addClip()
+        draw(at: .zero, from: frame, operation: .sourceOver, fraction: 1)
+        image.unlockFocus()
+        return image
+    }
 }
 
 // https://github.com/rudrajikadra/Face-Detection-Using-Vision-Framework-iOS-Application/blob/master/Face%20Detection/ViewController.swift
 // https://gist.github.com/jeanetienne/76ee42335f80c09d6dafc58169c669fe
 // https://stackoverflow.com/questions/43519752/cut-rounded-image-with-the-face-from-cidetector-and-cifacefeature
-//
-//
-//
-//
-//
