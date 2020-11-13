@@ -155,3 +155,8 @@ extension NSImage {
     }
 }
 
+
+// https://github.com/azeemohd786/LiveFaceDetection
+// https://heartbeat.fritz.ai/face-recognition-and-detection-on-ios-using-native-swift-code-core-ml-and-arkit-feed10c468da
+// https://medium.com/onfido-tech/live-face-tracking-on-ios-using-vision-framework-adf8a1799233
+// https://github.com/rudrajikadra/Face-Detection-Using-Vision-Framework-iOS-Application
