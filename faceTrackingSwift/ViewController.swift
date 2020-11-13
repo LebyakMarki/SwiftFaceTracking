@@ -17,6 +17,9 @@ class ViewController: NSViewController, AVCaptureVideoDataOutputSampleBufferDele
     var output: AVCaptureVideoDataOutput!
     private var drawings: [CAShapeLayer] = []
     
+    // Fix this to the center of NSImage (1/3 of wdth)
+    var lastBoundingBox = CGRect(x: 0, y: 0, width: 0, height: 0)
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
@@ -56,6 +59,17 @@ class ViewController: NSViewController, AVCaptureVideoDataOutputSampleBufferDele
         let y = (1 - object.boundingBox.origin.y) * CGFloat(inputImage.size.height) - height
 
         let croppingRect = CGRect(x: x, y: y, width: width, height: height)
+        lastBoundingBox = croppingRect
+        guard let image = inputImage.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            return nil
+        }
+        let imageCropped = image.cropping(to: croppingRect)
+        return imageCropped
+    }
+    
+    
+    func cropImageNoFace(inputImage: NSImage) -> CGImage? {
+        let croppingRect = lastBoundingBox
         guard let image = inputImage.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             return nil
         }
@@ -79,18 +93,33 @@ class ViewController: NSViewController, AVCaptureVideoDataOutputSampleBufferDele
         let request = VNDetectFaceRectanglesRequest { (req, err)
             in
             if err != nil {
-                print("Failed to detect faces.")
-                return
-            }
-            req.results?.forEach({(res) in
-                guard let faceObserve = res as? VNFaceObservation else {
-                    return
-                }
+//                print("Failed to detect faces.")
+//                return
                 let nsImage = capturedImage
-                let faceImage = self.cropImage(object: faceObserve, inputImage: nsImage)
+                let faceImage = self.cropImageNoFace(inputImage: nsImage)
                 let image = NSImage(cgImage: faceImage!, size: NSZeroSize)
                 capturedImage = image
-            })
+            } else {
+                req.results?.forEach({(res) in
+//                    guard let faceObserve = res as? VNFaceObservation else {
+//
+//                        return
+//                    }
+                    let faceObserve = res as? VNFaceObservation
+                    if faceObserve == nil {
+                        let nsImage = capturedImage
+                        let faceImage = self.cropImageNoFace(inputImage: nsImage)
+                        let image = NSImage(cgImage: faceImage!, size: NSZeroSize)
+                        capturedImage = image
+                    } else {
+                        let nsImage = capturedImage
+                        let faceImage = self.cropImage(object: faceObserve!, inputImage: nsImage)
+                        let image = NSImage(cgImage: faceImage!, size: NSZeroSize)
+                        capturedImage = image
+                    }
+                   
+                })
+            }
         }
         guard let cgImage = capturedImage.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             return
@@ -126,6 +155,3 @@ extension NSImage {
     }
 }
 
-// https://github.com/rudrajikadra/Face-Detection-Using-Vision-Framework-iOS-Application/blob/master/Face%20Detection/ViewController.swift
-// https://gist.github.com/jeanetienne/76ee42335f80c09d6dafc58169c669fe
-// https://stackoverflow.com/questions/43519752/cut-rounded-image-with-the-face-from-cidetector-and-cifacefeature
